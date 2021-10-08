@@ -13,6 +13,7 @@ const {
   unlike,
   comment,
   uncomment,
+  hello,
 } = require("../controllers/postController");
 const { createPostValidator } = require("../validators/index");
 const { requireSignin } = require("../controllers/authController");
@@ -38,6 +39,7 @@ router.get("/posts/by/:userId", requireSignin, postsByUser);
 router.delete("/post/:postId", requireSignin, isPoster, deletePost);
 router.put("/post/:postId", requireSignin, isPoster, updatePost);
 router.get("/post/:postId", singlePost);
+router.get("/", hello);
 
 //any route containing userId, our app will execute userById()
 router.param("userId", userById);

@@ -213,3 +213,7 @@ exports.uncomment = (req, res) => {
       }
     });
 };
+
+exports.hello = (req, res) => {
+  res.send("Hello World");
+};
