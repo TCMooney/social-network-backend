@@ -39,6 +39,10 @@ const userSchema = new Schema({
     data: String,
     default: "",
   },
+  role: {
+    type: String,
+    default: "subscriber",
+  },
 });
 
 //Virtual fields are additional fields for a given model. Their values can be set manually or automatically with defined functonality. Keep in mind: virtual properties don't get persisted in the database. They only exist logically and are not written to the document's collection.=

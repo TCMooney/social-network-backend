@@ -3,15 +3,30 @@ const Post = require("../models/postSchema");
 const formidable = require("formidable");
 const fs = require("fs");
 
-exports.getPosts = (req, res) => {
-  const posts = Post.find()
-    .populate("postedBy", "_id name")
-    // .populate("comments", "text created")
-    // .populate("comments.postedBy", "_id name")
-    .select("__id title body created likes")
-    .sort({ created: -1 })
+exports.getPosts = async (req, res) => {
+  //get current page from req.query or use default value of 1
+  const currentPage = req.query.page || 1;
+  //return 3 posts per page
+  const perPage = 3;
+  let totalItems;
+
+  const posts = await Post.find()
+    .countDocuments()
+    .then((count) => {
+      totalItems = count;
+      return (
+        Post.find()
+          .skip((currentPage - 1) * perPage)
+          .populate("postedBy", "_id name role")
+          // .populate("comments", "text created")
+          .populate("comments.postedBy", "_id name")
+          .select("__id title body created likes")
+          .sort({ created: -1 })
+          .limit(perPage)
+      );
+    })
     .then((posts) => {
-      res.json(posts);
+      res.status(200).json(posts);
     })
     .catch((error) => res.status(404).json(error));
 };
@@ -50,9 +65,8 @@ exports.createPost = (req, res) => {
 
 exports.postsByUser = (req, res) => {
   Post.find({ postedBy: req.profile._id })
-    .populate("postedBy", "_id name")
+    .populate("postedBy", "_id name role")
     .populate("comments", "text created")
-    .populate("comments.postedBy", "_id name")
     .select("_id title body created likes")
     .sort("_created")
     .exec((err, posts) => {
@@ -67,7 +81,7 @@ exports.postsByUser = (req, res) => {
 
 exports.postById = (req, res, next, id) => {
   Post.findById(id)
-    .populate("posteBy", "_id name")
+    .populate("postedBy", "_id name role")
     .populate("comments", "text created")
     .populate("comments.postedBy", "_id name")
     .exec((err, post) => {
@@ -82,7 +96,10 @@ exports.postById = (req, res, next, id) => {
 };
 
 exports.isPoster = (req, res, next) => {
-  let isPoster = req.post && req.auth && req.post.postedBy._id == req.auth._id;
+  let sameUser = req.post && req.auth && req.post.postedBy._id == req.auth._id;
+  let adminUser = req.post && req.auth && req.auth.role === "admin";
+  let isPoster = sameUser || adminUser;
+
   if (!isPoster) {
     return res.status(403).json({
       error: "User is not authorized",
@@ -212,8 +229,4 @@ exports.uncomment = (req, res) => {
         res.json(result);
       }
     });
-};
-
-exports.hello = (req, res) => {
-  res.send("Hello World");
 };
